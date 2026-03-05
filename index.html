@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Arc Launcher Game</title>
+<style>
+body{
+    margin:0;
+    background:#0f172a;
+    color:white;
+    font-family:Arial, Helvetica, sans-serif;
+    text-align:center;
+}
+
+h1{
+    margin:10px;
+}
+
+#gameCanvas{
+    background:linear-gradient(#60a5fa,#e0f2fe);
+    border:3px solid white;
+    display:block;
+    margin:0 auto;
+}
+
+.controls{
+    margin:10px;
+}
+
+button,input{
+    padding:6px;
+    margin:5px;
+}
+</style>
+</head>
+<body>
+
+<h1>Arc Launcher 🎯</h1>
+
+<div class="controls">
+Angle:
+<input type="range" id="angle" min="10" max="80" value="45">
+
+Power:
+<input type="range" id="power" min="10" max="100" value="50">
+
+<button onclick="launch()">Launch</button>
+</div>
+
+<canvas id="gameCanvas" width="800" height="400"></canvas>
+
+<script>
+
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let ball = null;
+let gravity = 0.25;
+let score = 0;
+
+let target = {
+    x:650,
+    y:330,
+    r:20
+};
+
+function playLaunchSound(){
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const osc = audioCtx.createOscillator();
+
+    osc.type="square";
+    osc.frequency.value=500;
+
+    osc.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime+0.1);
+}
+
+function playHitSound(){
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    const osc = audioCtx.createOscillator();
+
+    osc.type="triangle";
+    osc.frequency.value=900;
+
+    osc.connect(audioCtx.destination);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime+0.2);
+}
+
+function launch(){
+
+    const angle = document.getElementById("angle").value * Math.PI/180;
+
+    const power = document.getElementById("power").value / 2;
+
+    ball = {
+        x:50,
+        y:330,
+        vx: Math.cos(angle) * power,
+        vy: -Math.sin(angle) * power
+    };
+
+    playLaunchSound();
+}
+
+function update(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle="#14532d";
+    ctx.fillRect(0,350,800,50);
+
+    ctx.fillStyle="black";
+    ctx.fillRect(40,320,20,30);
+
+    ctx.beginPath();
+    ctx.fillStyle="red";
+    ctx.arc(target.x,target.y,target.r,0,Math.PI*2);
+    ctx.fill();
+
+    if(ball){
+
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        ball.vy += gravity;
+
+        ctx.beginPath();
+        ctx.fillStyle="yellow";
+        ctx.arc(ball.x,ball.y,8,0,Math.PI*2);
+        ctx.fill();
+
+        let dx = ball.x - target.x;
+        let dy = ball.y - target.y;
+
+        let dist = Math.sqrt(dx*dx + dy*dy);
+
+        if(dist < target.r){
+
+            score++;
+
+            playHitSound();
+
+            target.x = 500 + Math.random()*250;
+            target.y = 300 + Math.random()*30;
+
+            ball = null;
+        }
+
+        if(ball && ball.y > 360){
+            ball = null;
+        }
+    }
+
+    ctx.fillStyle="white";
+    ctx.font="18px Arial";
+    ctx.fillText("Score: " + score, 10, 20);
+
+    requestAnimationFrame(update);
+}
+
+update();
+
+</script>
+
+</body>
+</html>
